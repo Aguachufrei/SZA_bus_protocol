@@ -38,7 +38,7 @@ if __name__ == "__main__":
         message = utils.recvline(s).decode("ascii")
         if iserror(message):
             print(
-                "Erabiltzailea ez da ezagutzen, ¿nahi duzu gure zerbitzuan erregistratzea? N/y\n"
+                "Erabiltzailea ez da ezagutzen, ¿nahi duzu gure zerbitzuan erregistratzea? N/y"
             )
             erantzuna = input("> ")
             if erantzuna.lower() == "y":
