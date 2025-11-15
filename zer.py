@@ -8,7 +8,7 @@ USERS_PATH = "users.txt"
 
 
 class State:
-    Identification, Authentication, Main, Booking = range(4)
+    Identification, Authentication, Creation, Main, Booking = range(5)
 
 
 def sendOK(s, params=""):
@@ -21,6 +21,11 @@ def sendER(s, code=1):
 
 def hash_password(password):
     return hashlib.sha512(password.encode()).hexdigest()
+
+
+def save_user(username, password):
+    with open(USERS_PATH, "a", encoding="utf-8") as f:
+        f.write(f"{username}#{password}\n")
 
 
 def load_users(filename):
@@ -37,7 +42,7 @@ user_rg = load_users(USERS_PATH)
 
 def session(s):
     state = State.Identification
-
+    username = None
     while True:
         message = utils.recvline(s).decode("ascii")
         if not message:
@@ -52,6 +57,7 @@ def session(s):
                 sendER(s)
             sendOK(s)
             state = State.Authentication
+
         elif message.startswith(utils.Command.Password):
             if state != State.Authentication:
                 sendER(s)
@@ -60,10 +66,29 @@ def session(s):
             if user_rg.get(username) == password:
                 sendOK(s)
                 state = State.Main
-            else:
-                sendER(s, 3)
-                state = State.Identification
+                continue
+            sendER(s, 3)
+            state = State.Identification
 
+        elif message.startswith(utils.Command.NewUser):
+            if state != State.Identification:
+                sendER(s)
+                continue
+            username = message[5:]
+            if username in user_rg:
+                sendER(s)
+            sendOK(s)
+            state = State.Creation
+
+        elif message.startswith(utils.Command.NewPassword):
+            if state != State.Creation:
+                sendER(s)
+                continue
+            password = hash_password(message[5:])
+            save_user(username, password)
+            user_rg[username] = password
+            sendOK(s)
+            state = State.Main
         elif message.startswith(utils.Command.Exit):
             sendOK(s)
             return
