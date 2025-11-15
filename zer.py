@@ -45,6 +45,7 @@ def session(s):
     username = None
     while True:
         message = utils.recvline(s).decode("ascii")
+        print(message)
         if not message:
             return
 
@@ -71,16 +72,20 @@ def session(s):
             state = State.Identification
 
         elif message.startswith(utils.Command.NewUser):
+            """
             if state != State.Identification:
                 sendER(s)
                 continue
+                """
             username = message[5:]
+            print(username)
             if username in user_rg:
                 sendER(s)
             sendOK(s)
             state = State.Creation
 
         elif message.startswith(utils.Command.NewPassword):
+            print(state)
             if state != State.Creation:
                 sendER(s)
                 continue

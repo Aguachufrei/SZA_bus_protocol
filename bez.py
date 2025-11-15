@@ -53,6 +53,7 @@ if __name__ == "__main__":
                 message = "{}#{}\r\n".format(utils.Command.NewPassword, password)
                 s.sendall(message.encode("ascii"))
                 message = utils.recvline(s).decode("ascii")
+                print(message)
                 if iserror(message):
                     print("errorea erabiltzailea sortzen")
                     continue
