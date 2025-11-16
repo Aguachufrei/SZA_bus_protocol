@@ -46,6 +46,7 @@ def session(s):
     while True:
         message = utils.recvline(s).decode("ascii")
         print(message)
+        print(state)
         if not message:
             return
 
@@ -56,6 +57,7 @@ def session(s):
             username = message[5:]
             if username not in user_rg:
                 sendER(s)
+                print("user is not registered")
             sendOK(s)
             state = State.Authentication
 
@@ -64,11 +66,13 @@ def session(s):
                 sendER(s)
                 continue
             password = hash_password(message[5:])
-            if user_rg.get(username) == password:
+            if user_rg.get(username).strip() == password.strip():
                 sendOK(s)
+                print("logged in succesfully")
                 state = State.Main
                 continue
             sendER(s, 3)
+            print("passwords do not match")
             state = State.Identification
 
         elif message.startswith(utils.Command.NewUser):
@@ -81,6 +85,7 @@ def session(s):
             print(username)
             if username in user_rg:
                 sendER(s)
+                print("user already exists")
             sendOK(s)
             state = State.Creation
 
@@ -100,6 +105,7 @@ def session(s):
 
         else:
             sendER(s)
+            print("Unknown command")
 
 
 if __name__ == "__main__":

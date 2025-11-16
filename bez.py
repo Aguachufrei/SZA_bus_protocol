@@ -37,9 +37,7 @@ if __name__ == "__main__":
         s.sendall(message.encode("ascii"))
         message = utils.recvline(s).decode("ascii")
         if iserror(message):
-            print(
-                "Erabiltzailea ez da ezagutzen, ¿nahi duzu gure zerbitzuan erregistratzea? N/y"
-            )
+            print("Erabiltzailea ez da ezagutzen, ¿nahi duzu gure zerbitzuan erregistratzea? N/y")
             erantzuna = input("> ")
             if erantzuna.lower() == "y":
                 user = input("Erabiltzaile berria: \n")
@@ -53,7 +51,6 @@ if __name__ == "__main__":
                 message = "{}#{}\r\n".format(utils.Command.NewPassword, password)
                 s.sendall(message.encode("ascii"))
                 message = utils.recvline(s).decode("ascii")
-                print(message)
                 if iserror(message):
                     print("errorea erabiltzailea sortzen")
                     continue
@@ -61,13 +58,16 @@ if __name__ == "__main__":
             else:
                 continue
         password = input("Pasahitza: ")
-        message = "{}{}\r\n".format(utils.Command.Password, password)
+        message = "{}#{}\r\n".format(utils.Command.Password, password)
         s.sendall(message.encode("ascii"))
         message = utils.recvline(s).decode("ascii")
         if iserror(message):
             continue
+        print("logged in succesfully")
         break
 
-    print(user, password)
+    s.sendall(utils.Command.NewUser.encode("ascii"))
+    utils.recvline(s).decode("ascii")
+
     # Soket-a itxi
     s.close()
