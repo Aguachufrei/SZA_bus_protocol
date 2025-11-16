@@ -1,4 +1,4 @@
-import socket, sys, os, signal, hashlib
+import socket, sys, os, signal, hashlib, datetime
 import utils
 
 
@@ -37,7 +37,32 @@ def load_users(filename):
     return users
 
 
+def load_data(filename):
+    data = {}
+    with open(filename, "r", encoding="utf-8") as f:
+        for line in f:
+            station_name, information = line.split("#", 1)
+            entries = information.split("#")
+            data[station_name] = {}
+            for entry in entries:
+                entry = entry.strip()
+                part = entry.split(" ")
+                timepart = part[1].split(":")
+                entry_data = {
+                    "first": datetime.time(int(timepart[0]), int(timepart[1])),
+                    "freq": int(part[2]),
+                }
+                data[station_name][part[0]] = entry_data
+    return data
+
+
 user_rg = load_users(USERS_PATH)
+data_rg = load_data(DATA_PATH)
+print(data_rg)
+print()
+print(data_rg["GELTOKI1"])
+print(data_rg["GELTOKI1"]["35"])
+print(data_rg["GELTOKI1"]["35"]["freq"])
 
 
 def session(s):
