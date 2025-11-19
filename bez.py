@@ -4,6 +4,31 @@ import utils
 SERVER = "localhost"
 PORT = 41900
 
+class Menua:
+    List, Book, Cancel, Exit = range(1, 5)
+    Options = (
+        "Ikusi zerbitzuak",
+        "Egin erreserba",
+        "Utzi erreserba",
+        "Saioa amaitu"
+    )
+
+    def menua():
+        print("+{}+".format('-' * 30))
+        for i, option in enumerate(Menua.Options, 1):
+            print("| {}.- {:<25}|".format(i, option))
+        print("+{}+".format('-' * 30))
+
+        while True:
+            try:
+                selected = int(input("Egin zure aukera: "))
+            except:
+                print("Aukera okerra, saiatu berriro.")
+                continue
+            if 0 < selected <= len(Menua.Options):
+                return selected
+            else:
+                print("Aukera okerra, saiatu berriro.")
 
 def iserror(message):
     if message.startswith("ER"):
@@ -64,7 +89,48 @@ if __name__ == "__main__":
         if iserror(message):
             continue
         print("logged in succesfully")
-        break
+        while True:
+            option = Menua.menua()
+
+            if option == Menua.List:
+                message = "{}\r\n".format(utils.Command.List)
+                s.sendall(message.encode("ascii"))
+                response = utils.recvline(s).decode("ascii")
+                if iserror(response):
+                    print("Errorea zerbitzuak lortzean")
+                else:
+                    print("Zerbitzuak eskuragarri:", response[3:])
+
+            elif option == Menua.Book:
+                geltoki = input("Sartu geltokia: ")
+                linea = input("Sartu línea: ")
+                ordua = input("Sartu ordua (HH:MM): ")
+                message = "{} {} {} {}\r\n".format(utils.Command.Book, geltoki, linea, ordua)
+                s.sendall(message.encode("ascii"))
+                response = utils.recvline(s).decode("ascii")
+                if iserror(response):
+                    print("Esandako bidaia ez da aurkitu")
+                else:
+                    print("Erreserba ondo  correctamente")
+
+            elif option == Menua.Cancel:
+                geltoki = input("Sartu geltokia: ")
+                linea = input("Sartu línea: ")
+                ordua = input("Sartu ordua (HH:MM): ")
+                message = "{} {} {} {}\r\n".format(utils.Command.Cancel, geltoki, linea, ordua)
+                s.sendall(message.encode("ascii"))
+                response = utils.recvline(s).decode("ascii")
+                if iserror(response):
+                    print("Errorea erreserba ezabatzean")
+                else:
+                    print("Erreserba ondo ezabatu egin da")
+
+            elif option == Menua.Exit:
+                message = "{}\r\n".format(utils.Command.Exit)
+                s.sendall(message.encode("ascii"))
+                print("Saioa amaitu da.")
+                break
+        
 
     s.sendall(utils.Command.NewUser.encode("ascii"))
     utils.recvline(s).decode("ascii")

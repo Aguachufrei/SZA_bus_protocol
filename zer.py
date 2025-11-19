@@ -23,17 +23,26 @@ def hash_password(password):
     return hashlib.sha512(password.encode()).hexdigest()
 
 
-def save_user(username, password):
-    with open(USERS_PATH, "a", encoding="utf-8") as f:
-        f.write(f"{username}#{password}\n")
-
-
+def save_users(filename, users):
+    with open(filename, "w", encoding="utf-8") as f:
+        for user, info in users.items():
+            line = user + "#" + info["password"]
+            for r in info["reservations"]:
+                line += "#" + r
+            f.write(line + "\n")
+        
 def load_users(filename):
     users = {}
     with open(filename, "r", encoding="utf-8") as f:
         for line in f:
-            user, pwd_hash = line.split("#", 1)
-            users[user] = pwd_hash
+            parts = line.strip().split("#")
+            user = parts[0]
+            pwd_hash = parts[1]
+            reservations = parts[2:] if len(parts) > 2 else []
+            users[user] = {
+                "password": pwd_hash,
+                "reservations": reservations
+            }
     return users
 
 
@@ -120,14 +129,59 @@ def session(s):
                 sendER(s)
                 continue
             password = hash_password(message[5:])
-            save_user(username, password)
+            save_users(username, password)
             user_rg[username] = password
             sendOK(s)
             state = State.Main
         elif message.startswith(utils.Command.Exit):
             sendOK(s)
             return
+        
+        elif message.startswith(utils.Command.Book):
+            if state != State.Main:
+                sendER(s, 5)  
+                continue
+            try:
+                _, geltoki, linea, ordua = message.split(" ")
+            except ValueError:
+                sendER(s, 6) 
+                continue
+            if geltoki in data_rg and linea in data_rg[geltoki]:
+                ordua_parts = ordua.split(":")
+                ordua_obj = datetime.time(int(ordua_parts[0]), int(ordua_parts[1]))
+                lehenengoa = data_rg[geltoki][linea]["first"]
+                frekuentzia = data_rg[geltoki][linea]["freq"]
+                eskatutako_minutuak = ordua_obj.hour * 60 + ordua_obj.minute
+                lehenengo_minutuak = lehenengoa.hour * 60 + lehenengoa.minute
+                if eskatutako_minutuak >= lehenengo_minutuak and (eskatutako_minutuak - lehenengo_minutuak) % frekuentzia == 0:
+                    erreserba = f"{geltoki} {linea} {ordua}"
+                    user_rg[username]["reservations"].append(erreserba)
+                    save_users(USERS_PATH, user_rg)
+                    sendOK(s)
+                    print(f"Gehitutako erreserba: {username}: {geltoki}-{linea} {ordua}etan")
+                else:
+                    sendER(s, 7)  
+            else:
+                sendER(s, 8) 
+        elif message.startswith(utils.Command.Cancel):
+            if state != State.Main:
+                sendER(s, 9) 
+                continue
 
+            try:
+                _, geltoki, linea, ordua = message.split(" ")
+            except ValueError:
+                sendER(s, 10)  
+                continue
+
+            erreserba = f"{geltoki} {linea} {ordua}"
+            if erreserba in user_rg[username]["reservations"]:
+                user_rg[username]["reservations"].remove(erreserba)
+                save_users(USERS_PATH, user_rg)
+                sendOK(s)
+                print(f"Hurrego erreserba ezabatu da{username}: {erreserba}")
+            else:
+                sendER(s, 11) 
         else:
             sendER(s)
             print("Unknown command")
